@@ -10,6 +10,10 @@ jobs:
     steps:
       - checkout # check out source code to working directory
 
+      - setup_remote_docker:
+          version: 19.03.13
+          docker_layer_caching: true
+
       - restore_cache:
           keys:
             - go-mod-v4-{{ checksum "go.sum" }}
