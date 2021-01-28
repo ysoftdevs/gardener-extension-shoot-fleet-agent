@@ -1,0 +1,7 @@
+apiVersion: {{ include "priorityclassversion" . }}
+kind: PriorityClass
+metadata:
+  name: gardener-extension-shoot-fleet-agent
+value: 1000000000
+globalDefault: true
+description: "Priority class for the Gardener extension: shoot-fleet-agent."

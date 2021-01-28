@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: extension-shoot-fleet-agent-service.config
+  namespace: {{ .Release.Namespace }}
+data:
+  config.yaml: {{ include "agentconfig" . | b64enc | trim }}

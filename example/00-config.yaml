@@ -1,0 +1,5 @@
+apiVersion: shoot-fleet-agent-service.extensions.config.gardener.cloud/v1alpha1
+kind: FleetAgentConfig
+clientConnection:
+  kubeconfig: #base64 encoded kubeconfig
+namespace: clusters #namespace to register clusters in fleet manager cluster

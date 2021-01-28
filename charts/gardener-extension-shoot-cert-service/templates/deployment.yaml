@@ -1,0 +1,74 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gardener-extension-shoot-fleet-agent
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: gardener-extension-shoot-fleet-agent
+    helm.sh/chart: gardener-extension-shoot-fleet-agent
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  revisionHistoryLimit: 0
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gardener-extension-shoot-fleet-agent
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      annotations:
+        checksum/secret-fleet-service-config: {{ include "agentconfig" . | sha256sum }}
+        {{- if .Values.imageVectorOverwrite }}
+        checksum/configmap-extension-imagevector-overwrite: {{ include (print $.Template.BasePath "/configmap-imagevector-overwrite.yaml") . | sha256sum }}
+        {{- end }}
+      labels:
+        app.kubernetes.io/name: gardener-extension-shoot-fleet-agent
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      priorityClassName: gardener-extension-shoot-fleet-agent
+      serviceAccountName: gardener-extension-shoot-fleet-agent
+      containers:
+      - name: gardener-extension-shoot-fleet-agent
+        image: {{ include "image" . }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+        - /gardener-extension-shoot-fleet-agent
+        - --config=/etc/fleet-service/config.yaml
+        - --max-concurrent-reconciles={{ .Values.controllers.concurrentSyncs }}
+        - --healthcheck-max-concurrent-reconciles={{ .Values.controllers.healthcheck.concurrentSyncs }}
+        - --disable-controllers={{ .Values.disableControllers | join "," }}
+        - --ignore-operation-annotation={{ .Values.controllers.ignoreOperationAnnotation }}
+        - --leader-election-id={{ include "leaderelectionid" . }}
+        env:
+        - name: LEADER_ELECTION_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        {{- if .Values.imageVectorOverwrite }}
+        - name: IMAGEVECTOR_OVERWRITE
+          value: /charts_overwrite/images_overwrite.yaml
+        {{- end }}
+        {{- if .Values.resources }}
+        resources:
+{{ toYaml .Values.resources | trim | indent 10 }}
+        {{- end }}
+        volumeMounts:
+        - name: fleet-service-config
+          mountPath: /etc/fleet-service
+          readOnly: true
+        {{- if .Values.imageVectorOverwrite }}
+        - name: extension-imagevector-overwrite
+          mountPath: /charts_overwrite/
+          readOnly: true
+        {{- end }}
+      volumes:
+      - name: fleet-service-config
+        secret:
+          secretName: extension-shoot-fleet-agent-service.config
+      {{- if .Values.imageVectorOverwrite }}
+      - name: extension-imagevector-overwrite
+        configMap:
+          name: {{ include "name" .}}-imagevector-overwrite
+          defaultMode: 420
+      {{- end }}
