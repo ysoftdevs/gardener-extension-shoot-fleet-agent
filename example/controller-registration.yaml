@@ -14,5 +14,3 @@ spec:
       values:
         image:
           tag: v1.0.0-dev
-        fleetManager:
-          kubeconfig: #base64 encoded kubeconfig pointing to Fleet manager cluster with correct access rights(rw secret/cluster.fleet.cattle.io
