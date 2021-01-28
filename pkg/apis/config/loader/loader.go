@@ -13,7 +13,9 @@ import (
 )
 
 var (
-	Codec  runtime.Codec
+	//codec used to encode
+	Codec runtime.Codec
+	//scheme to register
 	Scheme *runtime.Scheme
 )
 

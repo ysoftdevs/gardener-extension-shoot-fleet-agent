@@ -102,6 +102,7 @@ func ControllerSwitches() *cmd.SwitchOptions {
 	)
 }
 
+// ApplyHealthCheckConfig applies healthcheck config
 func (c *FleetServiceConfig) ApplyHealthCheckConfig(config *healthcheckconfig.HealthCheckConfig) {
 	if c.config.HealthCheckConfig != nil {
 		*config = *c.config.HealthCheckConfig

@@ -42,7 +42,11 @@ import (
 
 // ActuatorName is the name of the Fleet agent actuator.
 const ActuatorName = "shoot-fleet-agent-actuator"
+
+// KubeconfigSecretName name of secret that holds kubeconfig for Shoot
 const KubeconfigSecretName = "kubecfg"
+
+// KubeconfigKey key in KubeconfigSecretName secret that holds kubeconfig for Shoot
 const KubeconfigKey = "kubeconfig"
 
 // NewActuator returns an actuator responsible for Extension resources.
@@ -93,7 +97,7 @@ func (a *actuator) Reconcile(ctx context.Context, ex *extensionsv1alpha1.Extensi
 		}
 	}
 
-	a.registerClusterInFleetManager(ctx, namespace, cluster)
+	a.RegisterClusterInFleetManager(ctx, namespace, cluster)
 	return a.updateStatus(ctx, ex)
 }
 
@@ -135,14 +139,13 @@ func (a *actuator) InjectScheme(scheme *runtime.Scheme) error {
 	return nil
 }
 
-func (a *actuator) registerClusterInFleetManager(ctx context.Context, namespace string, cluster *extensions.Cluster) {
+// RegisterClusterInFleetManager registers cluster in remote fleet manager
+func (a *actuator) RegisterClusterInFleetManager(ctx context.Context, namespace string, cluster *extensions.Cluster) {
 	a.logger.Info("Starting with already registered check")
 	registered, err := a.fleetManager.GetCluster(ctx, cluster.Shoot.Name)
 	if !errors.IsNotFound(err) {
 		a.logger.Info("Cluster already registered - skipping registration", "clientId", registered.Spec.ClientID)
 		return
-	} else {
-		a.logger.Info("Cluster registration not found.")
 	}
 	a.logger.Info("Starting cluster registration process")
 	secret := &corev1.Secret{}
