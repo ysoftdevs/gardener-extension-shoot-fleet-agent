@@ -21,4 +21,3 @@ func writeKubeconfigToTempFile(kubeconfig []byte) (path string, error error) {
 	}
 	return tmpFile.Name(), nil
 }
-

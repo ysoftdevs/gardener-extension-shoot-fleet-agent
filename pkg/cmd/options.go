@@ -16,13 +16,13 @@ package cmd
 
 import (
 	"errors"
-	"github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/controller"
+	"github.com/gardener/gardener/extensions/pkg/controller/cmd"
+	extensionshealthcheckcontroller "github.com/gardener/gardener/extensions/pkg/controller/healthcheck"
+	healthcheckconfig "github.com/gardener/gardener/extensions/pkg/controller/healthcheck/config"
 	apisconfig "github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/apis/config"
 	"github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/apis/config/v1alpha1"
+	"github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/controller"
 	controllerconfig "github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/controller/config"
-	"github.com/gardener/gardener/extensions/pkg/controller/cmd"
-	healthcheckconfig "github.com/gardener/gardener/extensions/pkg/controller/healthcheck/config"
-	extensionshealthcheckcontroller "github.com/gardener/gardener/extensions/pkg/controller/healthcheck"
 	healthcheckcontroller "github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/controller/healthcheck"
 	"github.com/spf13/pflag"
 	"io/ioutil"
@@ -43,7 +43,6 @@ func init() {
 
 	decoder = serializer.NewCodecFactory(scheme).UniversalDecoder()
 }
-
 
 // FleetServiceOptions holds options related to the fleet agent service.
 type FleetServiceOptions struct {

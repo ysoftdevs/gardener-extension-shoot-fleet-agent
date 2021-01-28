@@ -54,7 +54,7 @@ func NewActuator(config config.Config) extension.Actuator {
 		panic(err)
 	}
 	fleetClientConfig, _ := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
-	fleetManager, err := NewManagerForConfig(fleetClientConfig, "clusters")//TODO get from config
+	fleetManager, err := NewManagerForConfig(fleetClientConfig, "clusters") //TODO get from config
 	if err != nil {
 		panic(err)
 	}
@@ -62,14 +62,14 @@ func NewActuator(config config.Config) extension.Actuator {
 	return &actuator{
 		logger:        log.Log.WithName(ActuatorName),
 		serviceConfig: config,
-		fleetManager: fleetManager,
+		fleetManager:  fleetManager,
 	}
 }
 
 type actuator struct {
-	client      client.Client
-	config      *rest.Config
-	decoder     runtime.Decoder
+	client       client.Client
+	config       *rest.Config
+	decoder      runtime.Decoder
 	fleetManager *FleetManager
 
 	serviceConfig config.Config
@@ -87,7 +87,7 @@ func (a *actuator) Reconcile(ctx context.Context, ex *extensionsv1alpha1.Extensi
 	}
 
 	cfg := &config.Config{}
-	if ex.Spec.ProviderConfig != nil {//here we parse providerconfig
+	if ex.Spec.ProviderConfig != nil { //here we parse providerconfig
 		if _, _, err := a.decoder.Decode(ex.Spec.ProviderConfig.Raw, nil, cfg); err != nil {
 			return fmt.Errorf("failed to decode provider config: %+v", err)
 		}
@@ -151,8 +151,8 @@ func (a *actuator) registerClusterInFleetManager(ctx context.Context, namespace 
 	labels["corebundle"] = "true"
 	labels["region"] = cluster.Shoot.Spec.Region
 	labels["cluster"] = cluster.Shoot.Name
-	if a.serviceConfig.FleetAgentConfig.Labels != nil && len(a.serviceConfig.FleetAgentConfig.Labels) > 0 {//adds labels from configuration
-		for key, value := range a.serviceConfig.Labels{
+	if a.serviceConfig.FleetAgentConfig.Labels != nil && len(a.serviceConfig.FleetAgentConfig.Labels) > 0 { //adds labels from configuration
+		for key, value := range a.serviceConfig.Labels {
 			labels[key] = value
 		}
 	}

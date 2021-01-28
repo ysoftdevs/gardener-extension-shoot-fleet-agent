@@ -12,8 +12,8 @@ import (
 
 type FleetManager struct {
 	secretClient kubernetes.Clientset
-	fleetClient clientset.Interface
-	namespace string
+	fleetClient  clientset.Interface
+	namespace    string
 }
 
 func NewManagerForConfig(c *rest.Config, namespace string) (*FleetManager, error) {
@@ -30,7 +30,7 @@ func NewManagerForConfig(c *rest.Config, namespace string) (*FleetManager, error
 	return &FleetManager{
 		secretClient: *secretClient,
 		fleetClient:  fleetClient,
-		namespace: namespace,
+		namespace:    namespace,
 	}, nil
 }
 
