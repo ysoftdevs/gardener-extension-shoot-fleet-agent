@@ -1,6 +1,8 @@
 # [Gardener Extension for Fleet agent installation](https://gardener.cloud)
 
-[![CI Build status](https://concourse.ci.gardener.cloud/api/v1/teams/gardener/pipelines/gardener-extension-shoot-fleet-agent-master/jobs/master-head-update-job/badge)](https://concourse.ci.gardener.cloud/teams/gardener/pipelines/gardener-extension-shoot-fleet-agent-master/jobs/master-head-update-job)
+
+
+[![CircleCI](https://circleci.com/gh/javamachr/gardener-extension-shoot-fleet-agent.svg?style=shield)](https://circleci.com/gh/javamachr/gardener-extension-shoot-fleet-agent)
 [![Go Report Card](https://goreportcard.com/badge/github.com/javamachr/gardener-extension-shoot-fleet-agent)](https://goreportcard.com/report/github.com/javamachr/gardener-extension-shoot-fleet-agent)
 
 Project Gardener implements the automated management and operation of [Kubernetes](https://kubernetes.io/) clusters as a service. Its main principle is to leverage Kubernetes concepts for all of its tasks.
