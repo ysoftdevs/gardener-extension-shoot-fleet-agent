@@ -18,6 +18,8 @@ import (
 	"context"
 	b64 "encoding/base64"
 	"fmt"
+	"reflect"
+
 	"github.com/gardener/gardener/pkg/extensions"
 	"github.com/go-logr/logr"
 	fleetv1alpha1 "github.com/rancher/fleet/pkg/apis/fleet.cattle.io/v1alpha1"
@@ -58,7 +60,11 @@ func NewActuator(config config.Config) extension.Actuator {
 		panic(err)
 	}
 	fleetClientConfig, _ := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
-	fleetManager, err := NewManagerForConfig(fleetClientConfig, "clusters") //TODO get from config
+	var fleetNamespace = "clusters"
+	if len(config.Namespace) != 0 {
+		fleetNamespace = config.Namespace
+	}
+	fleetManager, err := NewManagerForConfig(fleetClientConfig, fleetNamespace)
 	if err != nil {
 		panic(err)
 	}
@@ -89,36 +95,45 @@ func (a *actuator) Reconcile(ctx context.Context, ex *extensionsv1alpha1.Extensi
 	if err != nil {
 		return err
 	}
-
-	cfg := &config.Config{}
-	if ex.Spec.ProviderConfig != nil { //here we parse providerconfig
-		if _, _, err := a.decoder.Decode(ex.Spec.ProviderConfig.Raw, nil, cfg); err != nil {
+	shootsConfigOverride := &config.Config{}
+	if ex.Spec.ProviderConfig != nil { //parse providerConfig defaults override for this Shoot
+		if _, _, err := a.decoder.Decode(ex.Spec.ProviderConfig.Raw, nil, shootsConfigOverride); err != nil {
 			return fmt.Errorf("failed to decode provider config: %+v", err)
 		}
 	}
-
-	a.RegisterClusterInFleetManager(ctx, namespace, cluster)
+	a.ReconcileClusterInFleetManager(ctx, namespace, cluster, shootsConfigOverride)
 	return a.updateStatus(ctx, ex)
 }
 
 // Delete the Extension resource.
 func (a *actuator) Delete(ctx context.Context, ex *extensionsv1alpha1.Extension) error {
 	namespace := ex.GetNamespace()
-	a.logger.Info("Component is being deleted", "component", "fleet-agent-management", "namespace", namespace)
+	cluster, err := controller.GetCluster(ctx, a.client, namespace)
+	if err != nil {
+		return err
+	}
+	a.logger.Info("Component is being deleted", "component", "fleet-agent-management", "namespace", namespace, "cluster", buildCrdName(cluster))
+	err = a.fleetManager.DeleteKubeconfigSecret(ctx, buildCrdName(cluster))
+	if err != nil {
+		a.logger.Error(err, "Failed to delete kubeconfig secret for Shoot cluster.", "cluster", buildCrdName(cluster))
+	}
+	err = a.fleetManager.DeleteCluster(ctx, buildCrdName(cluster))
+	if err != nil {
+		a.logger.Error(err, "Failed to delete Cluster registration for Shoot cluster.", "cluster", buildCrdName(cluster))
+	}
 	return nil
 }
 
 // Restore the Extension resource.
 func (a *actuator) Restore(ctx context.Context, ex *extensionsv1alpha1.Extension) error {
-	a.logger.Info("Component is being restored", "component", "fleet-agent-management")
-	return a.Reconcile(ctx, ex)
+	//NOOP as there are no resources by this controller in Seed
+	return nil
 }
 
 // Migrate the Extension resource.
 func (a *actuator) Migrate(ctx context.Context, ex *extensionsv1alpha1.Extension) error {
-	a.logger.Info("Component is being migrated", "component", "fleet-agent-management")
-
-	return a.Delete(ctx, ex)
+	//NOOP as there are no resources by this controller in Seed
+	return nil
 }
 
 // InjectConfig injects the rest config to this actuator.
@@ -139,28 +154,34 @@ func (a *actuator) InjectScheme(scheme *runtime.Scheme) error {
 	return nil
 }
 
-// RegisterClusterInFleetManager registers cluster in remote fleet manager
-func (a *actuator) RegisterClusterInFleetManager(ctx context.Context, namespace string, cluster *extensions.Cluster) {
+// ReconcileClusterInFleetManager reconciles cluster registration in remote fleet manager
+func (a *actuator) ReconcileClusterInFleetManager(ctx context.Context, namespace string, cluster *extensions.Cluster, override *config.Config) {
 	a.logger.Info("Starting with already registered check")
+	labels := prepareLabels(cluster, a.serviceConfig, override)
 	registered, err := a.fleetManager.GetCluster(ctx, cluster.Shoot.Name)
 	if !errors.IsNotFound(err) {
-		a.logger.Info("Cluster already registered - skipping registration", "clientId", registered.Spec.ClientID)
+		if reflect.DeepEqual(registered.Labels, labels) {
+			a.logger.Info("Cluster already registered - skipping registration", "clientId", registered.Spec.ClientID)
+		} else {
+			a.logger.Info("Updating labels of already registered cluster.", "clientId", registered.Spec.ClientID)
+			a.updateClusterLabelsInFleet(ctx, registered, labels)
+		}
 		return
 	}
-	a.logger.Info("Starting cluster registration process")
-	secret := &corev1.Secret{}
+	a.registerNewClusterInFleet(ctx, namespace, cluster, labels)
+}
 
-	labels := make(map[string]string)
-	labels["corebundle"] = "true"
-	labels["region"] = cluster.Shoot.Spec.Region
-	labels["cluster"] = cluster.Shoot.Name
-	if a.serviceConfig.FleetAgentConfig.Labels != nil && len(a.serviceConfig.FleetAgentConfig.Labels) > 0 { //adds labels from configuration
-		for key, value := range a.serviceConfig.Labels {
-			labels[key] = value
-		}
+func (a *actuator) updateClusterLabelsInFleet(ctx context.Context, clusterRegistration *fleetv1alpha1.Cluster, labels map[string]string) {
+	clusterRegistration.Labels = labels
+	_, err := a.fleetManager.UpdateCluster(ctx, clusterRegistration)
+	if err != nil {
+		a.logger.Error(err, "Failed to update cluster labels in Fleet registration.", "clusterName", clusterRegistration.Name)
 	}
-	a.logger.Info("Looking up Secret with KubeConfig for given Shoot.", "namespace", namespace, "secretName", KubeconfigSecretName)
+}
 
+func (a *actuator) registerNewClusterInFleet(ctx context.Context, namespace string, cluster *extensions.Cluster, labels map[string]string) {
+	a.logger.Info("Looking up Secret with KubeConfig for given Shoot.", "namespace", namespace, "secretName", KubeconfigSecretName)
+	secret := &corev1.Secret{}
 	if err := a.client.Get(ctx, kutil.Key(namespace, KubeconfigSecretName), secret); err == nil {
 		secretData := make(map[string][]byte)
 		secretData["value"] = secret.Data[KubeconfigKey]
@@ -169,7 +190,7 @@ func (a *actuator) RegisterClusterInFleetManager(ctx context.Context, namespace 
 		const fleetRegisterNamespace = "clusters"
 		kubeconfigSecret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "kubecfg-" + cluster.Shoot.Name,
+				Name:      "kubecfg-" + buildCrdName(cluster),
 				Namespace: fleetRegisterNamespace,
 			},
 			Data: secretData,
@@ -178,19 +199,17 @@ func (a *actuator) RegisterClusterInFleetManager(ctx context.Context, namespace 
 		clusterRegistration := fleetv1alpha1.Cluster{
 			TypeMeta: metav1.TypeMeta{},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      cluster.Shoot.Name,
+				Name:      buildCrdName(cluster),
 				Namespace: fleetRegisterNamespace,
 				Labels:    labels,
 			},
 			Spec: fleetv1alpha1.ClusterSpec{
-				KubeConfigSecret: "kubecfg-" + cluster.Shoot.Name,
+				KubeConfigSecret: "kubecfg-" + buildCrdName(cluster),
 			},
 		}
-		a.logger.Info("Creating kubeconfig secret for Fleet registration.")
 		if _, err = a.fleetManager.CreateKubeconfigSecret(ctx, &kubeconfigSecret); err != nil {
 			a.logger.Error(err, "Failed to create secret with kubeconfig for Fleet registration")
 		}
-		a.logger.Info("Creating Cluster registration for Fleet registration.")
 		if _, err = a.fleetManager.CreateCluster(ctx, &clusterRegistration); err != nil {
 			a.logger.Error(err, "Failed to create Cluster for Fleet registration")
 		}
@@ -198,6 +217,30 @@ func (a *actuator) RegisterClusterInFleetManager(ctx context.Context, namespace 
 	} else {
 		a.logger.Error(err, "Failed to find Secret with kubeconfig for Fleet registration.")
 	}
+}
+
+func prepareLabels(cluster *extensions.Cluster, serviceConfig config.Config, override *config.Config) map[string]string {
+	labels := make(map[string]string)
+	labels["corebundle"] = "true"
+	labels["region"] = cluster.Shoot.Spec.Region
+	labels["cluster"] = cluster.Shoot.Name
+	if len(override.Labels) > 0 { //adds labels from Shoot configuration
+		for key, value := range override.Labels {
+			labels[key] = value
+		}
+	} else {
+		if len(serviceConfig.FleetAgentConfig.Labels) > 0 { //adds labels from default configuration
+			for key, value := range serviceConfig.Labels {
+				labels[key] = value
+			}
+		}
+	}
+	return labels
+}
+
+// buildCrdName creates a unique name for cluster registration resources in Fleet manager cluster
+func buildCrdName(cluster *extensions.Cluster) string {
+	return cluster.Seed.Name + "" + cluster.Shoot.Name
 }
 
 func (a *actuator) updateStatus(ctx context.Context, ex *extensionsv1alpha1.Extension) error {
