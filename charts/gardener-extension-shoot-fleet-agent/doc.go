@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate ../../vendor/github.com/gardener/gardener/hack/generate-controller-registration.sh extension-shoot-fleet-agent . ../../VERSION ../../example/controller-registration.yaml Extension:shoot-fleet-agent
+//go:generate ../../hack/generate-controller-registration.sh extension-shoot-fleet-agent . ../../VERSION ../../example/controller-registration.yaml Extension:shoot-fleet-agent
 
 // Package chart enables go:generate support for generating the correct controller registration.
 package chart

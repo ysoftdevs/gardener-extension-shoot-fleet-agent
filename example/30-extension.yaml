@@ -7,5 +7,8 @@ metadata:
 spec:
   type: shoot-fleet-agent
   providerConfig:
-    apiVersion: service.cert.extensions.gardener.cloud/v1alpha1
-    kind: CertConfig
+    apiVersion: shoot-fleet-agent-service.extensions.config.gardener.cloud/v1alpha1
+    kind: FleetAgentConfig
+    clientConnection:
+      kubeconfig: #base64 encoded kubeconfig of fleet cluster
+    namespace: clusters #namespace to register clusters in fleet manager cluster

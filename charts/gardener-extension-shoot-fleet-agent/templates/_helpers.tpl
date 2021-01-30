@@ -9,7 +9,10 @@ kind: FleetAgentConfig
 clientConnection:
   kubeconfig: {{ .Values.fleetManager.kubeconfig }}
 {{- if .Values.fleetManager.labels }}
-labels: {{ .Values.fleetManager.labels | toYaml }}
+    labels: {{ .Values.fleetManager.labels | toYaml | nindent 6 }}
+{{- end }}
+{{- if .Values.fleetManager.namespace }}
+    namespace: {{ .Values.fleetManager.namespace }}
 {{- end }}
 {{- end }}
 
