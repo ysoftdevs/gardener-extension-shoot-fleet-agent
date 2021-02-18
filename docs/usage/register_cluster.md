@@ -15,10 +15,11 @@ spec:
     providerConfig:
       apiVersion: service.fleet-agent.extensions.gardener.cloud/v1alpha1
       kind:
-      clientConnection:
-        kubeconfig: base64 encoded kubeconfig
-      labels:
-        env: test
+      defaultConfig:
+        clientConnection:
+          kubeconfig: base64 encoded kubeconfig
+        labels:
+          env: test
 ```
 
 <style>

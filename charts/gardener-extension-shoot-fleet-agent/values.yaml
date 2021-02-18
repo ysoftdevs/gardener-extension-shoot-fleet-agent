@@ -27,9 +27,20 @@ controllers:
     concurrentSyncs: 1
 
 fleetManager:
+  #default config values
   kubeconfig: #base64encoded kubeconfig of fleet manager cluster comes here
   labels: # optional fleet Cluster crd labels
   namespace: clusters # namespace where Fleet clusters stores Cluster CRD objects
+  #project specific values
+#  projectConfig:
+#    myproject:
+#      kubeconfig: #base64encoded kubeconfig of fleet manager cluster for myproject comes here
+#      labels: # optional fleet Cluster crd labels for myproject
+#      namespace: clusters # namespace where Fleet clusters stores Cluster CRD objects for myproject
+#    myotherproject:
+#      kubeconfig: #base64encoded kubeconfig of fleet manager cluster for myotherproject comes here
+#      labels: # optional fleet Cluster crd labels for myotherproject
+#      namespace: clusters # namespace where Fleet clusters stores Cluster CRD objects for myotherproject
 
 disableControllers: []
 

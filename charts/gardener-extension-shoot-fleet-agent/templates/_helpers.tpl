@@ -6,13 +6,16 @@ gardener-extension-shoot-fleet-agent
 ---
 apiVersion: shoot-fleet-agent-service.extensions.config.gardener.cloud/v1alpha1
 kind: FleetAgentConfig
-clientConnection:
+defaultConfig:
   kubeconfig: {{ .Values.fleetManager.kubeconfig }}
 {{- if .Values.fleetManager.labels }}
-    labels: {{ .Values.fleetManager.labels | toYaml | nindent 6 }}
+  labels: {{ .Values.fleetManager.labels | toYaml | nindent 4 }}
 {{- end }}
 {{- if .Values.fleetManager.namespace }}
-    namespace: {{ .Values.fleetManager.namespace }}
+  namespace: {{ .Values.fleetManager.namespace }}
+{{- end }}
+{{- if .Values.fleetManager.projectConfig }}
+projectConfig: {{ .Values.fleetManager.projectConfig | toYaml | nindent 2 }}
 {{- end }}
 {{- end }}
 

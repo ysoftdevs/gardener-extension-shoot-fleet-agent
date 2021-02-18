@@ -44,15 +44,70 @@ string
 </tr>
 <tr>
 <td>
-<code>clientConnection</code></br>
+<code>defaultConfig</code></br>
 <em>
-k8s.io/component-base/config/v1alpha1.ClientConnectionConfiguration
+<a href="#shoot-fleet-agent-service.extensions.config.gardener.cloud/v1alpha1.ProjectConfig">
+ProjectConfig
+</a>
 </em>
 </td>
 <td>
-<em>(Optional)</em>
-<p>ClientConnection specifies the kubeconfig file and client connection
-settings for the proxy server to use when communicating with the apiserver.</p>
+<p>DefaultConfiguration holds default config applied if no project config found</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>projectConfig</code></br>
+<em>
+<a href="#shoot-fleet-agent-service.extensions.config.gardener.cloud/v1alpha1.ProjectConfig">
+map[string]github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/apis/config/v1alpha1.ProjectConfig
+</a>
+</em>
+</td>
+<td>
+<p>ProjectConfiguration holds configuration overrides for each project</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>healthCheckConfig</code></br>
+<em>
+<a href="https://github.com/gardener/gardener/extensions/pkg/controller/healthcheck/config">
+github.com/gardener/gardener/extensions/pkg/controller/healthcheck/config.HealthCheckConfig
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="shoot-fleet-agent-service.extensions.config.gardener.cloud/v1alpha1.ProjectConfig">ProjectConfig
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#shoot-fleet-agent-service.extensions.config.gardener.cloud/v1alpha1.FleetAgentConfig">FleetAgentConfig</a>)
+</p>
+<p>
+<p>ProjectConfig holds configuration for single project</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>kubeconfig</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>Kubeconfig contains base64 encoded kubeconfig</p>
 </td>
 </tr>
 <tr>
@@ -75,18 +130,6 @@ string
 </td>
 <td>
 <p>namespace to store clusters registrations in Fleet managers cluster</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>healthCheckConfig</code></br>
-<em>
-<a href="https://github.com/gardener/gardener/extensions/pkg/controller/healthcheck/config">
-github.com/gardener/gardener/extensions/pkg/controller/healthcheck/config.HealthCheckConfig
-</a>
-</em>
-</td>
-<td>
 </td>
 </tr>
 </tbody>

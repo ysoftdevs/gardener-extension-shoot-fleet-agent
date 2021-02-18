@@ -11,17 +11,30 @@ Recently, most of the vendor specific logic has been developed [in-tree](https:/
 
 ## Configuration
 
-Example configuration for this extension controller:
+Example configuration for this extension controller with default config and 2 project specific configs:
 
 ```yaml
 apiVersion: shoot-fleet-agent-service.extensions.config.gardener.cloud/v1alpha1
 kind: Configuration
-clientConnection:
+defaultConfig:
   kubeconfig: #base64encoded kubeconfig of cluster running Fleet manager
   labels: #extra labels to apply to Cluster registration
-    env: dev    
+    env: dev
+projectConfig:  
+  myproject:
+    kubeconfig: #base64encoded kubeconfig of cluster running Fleet manager
+    labels: 
+      project: myproject
+      somelabel: samevalue
+    namespace: clusters
+  myotherproject:
+    kubeconfig: #base64encoded kubeconfig of cluster running Fleet manager
+    labels: 
+      project: mypotherproject
+    namespace: fleetclusters
 ```
-
+Unless the shoot is in one of the myproject or myother project it will get defaultConfiguration.
+Configuration supplied in ControllerRegistration will be applied as default however it can be overriden via configuration in Extension for given Shoot.
 ## Extension-Resources
 
 Example extension resource:
@@ -39,6 +52,22 @@ spec:
 When an extension resource is reconciled, the extension controller will register Shoot cluster in Fleet management cluster(configured in kubeconfig in Configuration object above.
 
 Please note, this extension controller relies on existing properly configured [Fleet multi-cluster deployment](https://fleet.rancher.io/multi-cluster-install/) configured above.
+By default configuration from ControllerRegistration is used but if Extension specifies different config for particular Shoot that configuration overrides the default settings.
+
+## Shooted seeds registration in Fleet
+All shooted seeds will be ignored and not registered in Fleet. If you need to register shooted seeds please do so manually.
+
+## Fleet CRD cluster default labels
+By default all clusters registered in fleet will have following labels:
+
+|label|value|
+|---|---|
+|corebundle|true|
+|region| region of shoot |
+|cluster| name of shoot|
+|seed|name of shoots seed|
+
+Any labels defined in configuration are added to those default labels.
 
 ## How to start using or developing this extension controller locally
 

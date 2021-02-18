@@ -16,20 +16,21 @@ package controller
 
 import (
 	"context"
-	b64 "encoding/base64"
 	"fmt"
 	"reflect"
+	"strings"
 
+	projConfig "github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/apis/config"
+
+	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/gardener/gardener/pkg/extensions"
 	"github.com/go-logr/logr"
 	fleetv1alpha1 "github.com/rancher/fleet/pkg/apis/fleet.cattle.io/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -51,40 +52,40 @@ const KubeconfigSecretName = "kubecfg"
 // KubeconfigKey key in KubeconfigSecretName secret that holds kubeconfig for Shoot
 const KubeconfigKey = "kubeconfig"
 
+// DefaultConfigKey is the name of default config key.
+const DefaultConfigKey = "default"
+
 // NewActuator returns an actuator responsible for Extension resources.
 func NewActuator(config config.Config) extension.Actuator {
-	fleetKubeConfig, _ := b64.StdEncoding.DecodeString(config.FleetAgentConfig.ClientConnection.Kubeconfig)
-	var kubeconfigPath string
-	var err error
-	if kubeconfigPath, err = writeKubeconfigToTempFile(fleetKubeConfig); err != nil {
-		panic(err)
-	}
-	fleetClientConfig, _ := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
-	var fleetNamespace = "clusters"
-	if len(config.Namespace) != 0 {
-		fleetNamespace = config.Namespace
-	}
-	fleetManager, err := NewManagerForConfig(fleetClientConfig, fleetNamespace)
-	if err != nil {
-		panic(err)
-	}
+	logger := log.Log.WithName(ActuatorName)
+	fleetManagers := initializeFleetManagers(config, logger)
 
 	return &actuator{
-		logger:        log.Log.WithName(ActuatorName),
+		logger:        logger,
 		serviceConfig: config,
-		fleetManager:  fleetManager,
+		fleetManagers: fleetManagers,
 	}
 }
 
 type actuator struct {
-	client       client.Client
-	config       *rest.Config
-	decoder      runtime.Decoder
-	fleetManager *FleetManager
+	client        client.Client
+	config        *rest.Config
+	decoder       runtime.Decoder
+	fleetManagers map[string]*FleetManager
 
 	serviceConfig config.Config
 
 	logger logr.Logger
+}
+
+// initializeFleetManagers initializes fleet managers for given config
+func initializeFleetManagers(config config.Config, logger logr.Logger) map[string]*FleetManager {
+	fleetManagers := make(map[string]*FleetManager)
+	fleetManagers[DefaultConfigKey] = createFleetManager(config.DefaultConfiguration, logger)
+	for name, projConfig := range config.ProjectConfiguration {
+		fleetManagers[name] = createFleetManager(projConfig, logger)
+	}
+	return fleetManagers
 }
 
 // Reconcile the Extension resource.
@@ -94,6 +95,9 @@ func (a *actuator) Reconcile(ctx context.Context, ex *extensionsv1alpha1.Extensi
 	cluster, err := controller.GetCluster(ctx, a.client, namespace)
 	if err != nil {
 		return err
+	}
+	if isShootedSeedCluster(cluster) {
+		return a.updateStatus(ctx, ex)
 	}
 	shootsConfigOverride := &config.Config{}
 	if ex.Spec.ProviderConfig != nil { //parse providerConfig defaults override for this Shoot
@@ -112,12 +116,15 @@ func (a *actuator) Delete(ctx context.Context, ex *extensionsv1alpha1.Extension)
 	if err != nil {
 		return err
 	}
+	if isShootedSeedCluster(cluster) {
+		return nil
+	}
 	a.logger.Info("Component is being deleted", "component", "fleet-agent-management", "namespace", namespace, "cluster", buildCrdName(cluster))
-	err = a.fleetManager.DeleteKubeconfigSecret(ctx, buildCrdName(cluster))
+	err = a.getFleetManager(cluster).DeleteKubeconfigSecret(ctx, buildCrdName(cluster))
 	if err != nil {
 		a.logger.Error(err, "Failed to delete kubeconfig secret for Shoot cluster.", "cluster", buildCrdName(cluster))
 	}
-	err = a.fleetManager.DeleteCluster(ctx, buildCrdName(cluster))
+	err = a.getFleetManager(cluster).DeleteCluster(ctx, buildCrdName(cluster))
 	if err != nil {
 		a.logger.Error(err, "Failed to delete Cluster registration for Shoot cluster.", "cluster", buildCrdName(cluster))
 	}
@@ -157,23 +164,26 @@ func (a *actuator) InjectScheme(scheme *runtime.Scheme) error {
 // ReconcileClusterInFleetManager reconciles cluster registration in remote fleet manager
 func (a *actuator) ReconcileClusterInFleetManager(ctx context.Context, namespace string, cluster *extensions.Cluster, override *config.Config) {
 	a.logger.Info("Starting with already registered check")
-	labels := prepareLabels(cluster, a.serviceConfig, override)
-	registered, err := a.fleetManager.GetCluster(ctx, cluster.Shoot.Name)
-	if !errors.IsNotFound(err) {
+	labels := prepareLabels(cluster, getProjectConfig(cluster, &a.serviceConfig), getProjectConfig(cluster, override))
+	registered, err := a.getFleetManager(cluster).GetCluster(ctx, cluster.Shoot.Name)
+	if err != nil {
+		a.logger.Error(err, "Failed to get cluster registration for Shoot", "shoot", cluster.Shoot.Name)
+	}
+	if err == nil && registered != nil {
 		if reflect.DeepEqual(registered.Labels, labels) {
 			a.logger.Info("Cluster already registered - skipping registration", "clientId", registered.Spec.ClientID)
 		} else {
 			a.logger.Info("Updating labels of already registered cluster.", "clientId", registered.Spec.ClientID)
-			a.updateClusterLabelsInFleet(ctx, registered, labels)
+			a.updateClusterLabelsInFleet(ctx, registered, cluster, labels)
 		}
 		return
 	}
 	a.registerNewClusterInFleet(ctx, namespace, cluster, labels)
 }
 
-func (a *actuator) updateClusterLabelsInFleet(ctx context.Context, clusterRegistration *fleetv1alpha1.Cluster, labels map[string]string) {
+func (a *actuator) updateClusterLabelsInFleet(ctx context.Context, clusterRegistration *fleetv1alpha1.Cluster, cluster *extensions.Cluster, labels map[string]string) {
 	clusterRegistration.Labels = labels
-	_, err := a.fleetManager.UpdateCluster(ctx, clusterRegistration)
+	_, err := a.getFleetManager(cluster).UpdateCluster(ctx, clusterRegistration)
 	if err != nil {
 		a.logger.Error(err, "Failed to update cluster labels in Fleet registration.", "clusterName", clusterRegistration.Name)
 	}
@@ -207,10 +217,10 @@ func (a *actuator) registerNewClusterInFleet(ctx context.Context, namespace stri
 				KubeConfigSecret: "kubecfg-" + buildCrdName(cluster),
 			},
 		}
-		if _, err = a.fleetManager.CreateKubeconfigSecret(ctx, &kubeconfigSecret); err != nil {
+		if _, err = a.getFleetManager(cluster).CreateKubeconfigSecret(ctx, &kubeconfigSecret); err != nil {
 			a.logger.Error(err, "Failed to create secret with kubeconfig for Fleet registration")
 		}
-		if _, err = a.fleetManager.CreateCluster(ctx, &clusterRegistration); err != nil {
+		if _, err = a.getFleetManager(cluster).CreateCluster(ctx, &clusterRegistration); err != nil {
 			a.logger.Error(err, "Failed to create Cluster for Fleet registration")
 		}
 		a.logger.Info("Registered shoot cluster in Fleet Manager ", "registration", clusterRegistration)
@@ -219,17 +229,18 @@ func (a *actuator) registerNewClusterInFleet(ctx context.Context, namespace stri
 	}
 }
 
-func prepareLabels(cluster *extensions.Cluster, serviceConfig config.Config, override *config.Config) map[string]string {
+func prepareLabels(cluster *extensions.Cluster, serviceConfig projConfig.ProjectConfig, override projConfig.ProjectConfig) map[string]string {
 	labels := make(map[string]string)
 	labels["corebundle"] = "true"
 	labels["region"] = cluster.Shoot.Spec.Region
 	labels["cluster"] = cluster.Shoot.Name
+	labels["seed"] = cluster.Seed.Name
 	if len(override.Labels) > 0 { //adds labels from Shoot configuration
 		for key, value := range override.Labels {
 			labels[key] = value
 		}
 	} else {
-		if len(serviceConfig.FleetAgentConfig.Labels) > 0 { //adds labels from default configuration
+		if len(serviceConfig.Labels) > 0 { //adds labels from default configuration
 			for key, value := range serviceConfig.Labels {
 				labels[key] = value
 			}
@@ -238,13 +249,41 @@ func prepareLabels(cluster *extensions.Cluster, serviceConfig config.Config, ove
 	return labels
 }
 
+func (a *actuator) updateStatus(ctx context.Context, ex *extensionsv1alpha1.Extension) error {
+	return controller.TryUpdateStatus(ctx, retry.DefaultBackoff, a.client, ex, func() error {
+		return nil
+	})
+}
+
+func (a *actuator) getFleetManager(cluster *extensions.Cluster) *FleetManager {
+	manager, present := a.fleetManagers[getProjectName(cluster)]
+	if !present {
+		return a.fleetManagers[DefaultConfigKey]
+	}
+	return manager
+}
+
+// getProjectConfig return project specific or default config
+func getProjectConfig(cluster *extensions.Cluster, serviceConfig *config.Config) projConfig.ProjectConfig {
+	name := getProjectName(cluster)
+	projectConfig, present := serviceConfig.ProjectConfiguration[name]
+	if !present {
+		return serviceConfig.DefaultConfiguration
+	}
+	return projectConfig
+}
+
 // buildCrdName creates a unique name for cluster registration resources in Fleet manager cluster
 func buildCrdName(cluster *extensions.Cluster) string {
 	return cluster.Seed.Name + "" + cluster.Shoot.Name
 }
 
-func (a *actuator) updateStatus(ctx context.Context, ex *extensionsv1alpha1.Extension) error {
-	return controller.TryUpdateStatus(ctx, retry.DefaultBackoff, a.client, ex, func() error {
-		return nil
-	})
+// isShootedSeedCluster checks if clusters purpose is Infrastructure
+func isShootedSeedCluster(cluster *extensions.Cluster) bool {
+	return *cluster.Shoot.Spec.Purpose == v1beta1.ShootPurposeInfrastructure
+}
+
+// getProjectName extracts project name from Shoots namespace
+func getProjectName(cluster *extensions.Cluster) string {
+	return cluster.Shoot.Namespace[strings.LastIndex(cluster.Shoot.Namespace, "-")+1:]
 }

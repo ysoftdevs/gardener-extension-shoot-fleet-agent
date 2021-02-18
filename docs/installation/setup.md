@@ -22,9 +22,10 @@ apiVersion: core.gardener.cloud/v1beta1
 kind: ControllerRegistration
 ...
   values:
-    clientConnection:
-      kubeconfig: abcd
-    labels:
+    defaultConfig:
+        clientConnection:
+          kubeconfig: abcd
+        labels:
 ```
 
 If the `shoot-fleet-agent` should be enabled for every shoot cluster in your Gardener managed environment, you need to globally enable it in the `ControllerRegistration`:

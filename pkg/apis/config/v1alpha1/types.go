@@ -3,7 +3,6 @@ package v1alpha1
 import (
 	healthcheckconfig "github.com/gardener/gardener/extensions/pkg/controller/healthcheck/config"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	componentbaseconfigv1alpha1 "k8s.io/component-base/config/v1alpha1"
 )
 
 // +genclient
@@ -13,16 +12,23 @@ import (
 type FleetAgentConfig struct {
 	metav1.TypeMeta `json:",inline"`
 
-	// ClientConnection specifies the kubeconfig file and client connection
-	// settings for the proxy server to use when communicating with the apiserver.
-	// +optional
-	ClientConnection *componentbaseconfigv1alpha1.ClientConnectionConfiguration `json:"clientConnection,omitempty"`
+	// DefaultConfiguration holds default config applied if no project config found
+	DefaultConfiguration ProjectConfig `json:"defaultConfig,omitempty"`
+
+	// ProjectConfiguration holds configuration overrides for each project
+	ProjectConfiguration map[string]ProjectConfig `json:"projectConfig,omitempty"`
+
+	HealthCheckConfig *healthcheckconfig.HealthCheckConfig `json:"healthCheckConfig,omitempty"`
+}
+
+// ProjectConfig holds configuration for single project
+type ProjectConfig struct {
+	// Kubeconfig contains base64 encoded kubeconfig
+	Kubeconfig string `json:"kubeconfig,omitempty"`
 
 	// labels to use in Fleet Cluster registration
 	Labels map[string]string `json:"labels,omitempty"`
 
 	//namespace to store clusters registrations in Fleet managers cluster
 	Namespace string `json:"namespace,omitempty"`
-
-	HealthCheckConfig *healthcheckconfig.HealthCheckConfig `json:"healthCheckConfig,omitempty"`
 }
