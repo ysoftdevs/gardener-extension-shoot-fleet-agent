@@ -16,8 +16,7 @@ spec:
       apiVersion: service.fleet-agent.extensions.gardener.cloud/v1alpha1
       kind:
       defaultConfig:
-        clientConnection:
-          kubeconfig: base64 encoded kubeconfig
+        kubeconfig: base64 encoded kubeconfig
         labels:
           env: test
 ```

@@ -23,8 +23,7 @@ kind: ControllerRegistration
 ...
   values:
     defaultConfig:
-        clientConnection:
-          kubeconfig: abcd
+        kubeconfig: abcd
         labels:
 ```
 
