@@ -59,6 +59,23 @@ docker-images:
 docker-push:
 	@docker push $(IMAGE_PREFIX)-$(NAME):$(VERSION)
 
+#######################################################
+# Rules related to Containerd image build and release #
+#######################################################
+
+.PHONY: containerd-login
+containerd-login:
+	@echo "$(DOCKER_PASS)" | nerdctl login -u "$(DOCKER_USER)" --password-stdin
+
+.PHONY: containerd-images
+containerd-images:
+	@nerdctl build -t $(IMAGE_PREFIX)-$(NAME):$(VERSION) -f Dockerfile -m 6g --target $(EXTENSION_PREFIX)-$(NAME) .
+	@nerdctl build -t $(IMAGE_PREFIX)-$(NAME):latest -f Dockerfile -m 6g --target $(EXTENSION_PREFIX)-$(NAME) .
+
+.PHONY: containerd-push
+containerd-push:
+	@nerdctl push $(IMAGE_PREFIX)-$(NAME):$(VERSION)
+
 #####################################################################
 # Rules for verification, formatting, linting, testing and cleaning #
 #####################################################################

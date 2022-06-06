@@ -5,6 +5,7 @@
 /local
 **/dev
 /bin
+./vendor
 
 *.coverprofile
 *.html
