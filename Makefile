@@ -49,7 +49,7 @@ install:
 
 .PHONY: docker-login
 docker-login:
-	echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin
+	@echo "$$DOCKER_PASSWORD" | docker login -u "${DOCKER_USER}" --password-stdin "${REGISTRY}"
 
 .PHONY: docker-images
 docker-images:
@@ -65,7 +65,7 @@ docker-push:
 
 .PHONY: containerd-login
 containerd-login:
-	@echo "$(DOCKER_PASS)" | nerdctl login -u "$(DOCKER_USER)" --password-stdin
+	@echo "$$DOCKER_PASSWORD" | nerdctl login -u "${DOCKER_USER}" --password-stdin "${REGISTRY}"
 
 .PHONY: containerd-images
 containerd-images:
