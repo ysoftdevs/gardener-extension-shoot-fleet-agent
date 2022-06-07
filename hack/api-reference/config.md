@@ -60,7 +60,7 @@ ProjectConfig
 <code>projectConfig</code></br>
 <em>
 <a href="#shoot-fleet-agent-service.extensions.config.gardener.cloud/v1alpha1.ProjectConfig">
-map[string]github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/apis/config/v1alpha1.ProjectConfig
+map[string]github.com/ysoftdevs/gardener-extension-shoot-fleet-agent/pkg/apis/config/v1alpha1.ProjectConfig
 </a>
 </em>
 </td>

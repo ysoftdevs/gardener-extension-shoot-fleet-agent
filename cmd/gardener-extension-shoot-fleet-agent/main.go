@@ -15,7 +15,7 @@
 package main
 
 import (
-	"github.com/javamachr/gardener-extension-shoot-fleet-agent/cmd/gardener-extension-shoot-fleet-agent/app"
+	"github.com/ysoftdevs/gardener-extension-shoot-fleet-agent/cmd/gardener-extension-shoot-fleet-agent/app"
 	"os"
 
 	"github.com/gardener/gardener/pkg/logger"

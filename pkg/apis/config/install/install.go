@@ -1,9 +1,9 @@
 package install
 
 import (
-	"github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/apis/config"
-	v1alpha1 "github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/apis/config/v1alpha1"
 	v1alpha1fleet "github.com/rancher/fleet/pkg/apis/fleet.cattle.io/v1alpha1"
+	"github.com/ysoftdevs/gardener-extension-shoot-fleet-agent/pkg/apis/config"
+	v1alpha1 "github.com/ysoftdevs/gardener-extension-shoot-fleet-agent/pkg/apis/config/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"

@@ -8,9 +8,9 @@ import (
 
 	"k8s.io/client-go/tools/clientcmd"
 
-	fleetConfig "github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/apis/config"
-	clientset "github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/client/fleet/clientset/versioned"
 	"github.com/rancher/fleet/pkg/apis/fleet.cattle.io/v1alpha1"
+	fleetConfig "github.com/ysoftdevs/gardener-extension-shoot-fleet-agent/pkg/apis/config"
+	clientset "github.com/ysoftdevs/gardener-extension-shoot-fleet-agent/pkg/client/fleet/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"

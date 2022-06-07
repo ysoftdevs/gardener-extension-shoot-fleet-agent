@@ -15,7 +15,7 @@
 package controller
 
 import (
-	controllerconfig "github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/controller/config"
+	controllerconfig "github.com/ysoftdevs/gardener-extension-shoot-fleet-agent/pkg/controller/config"
 
 	"github.com/gardener/gardener/extensions/pkg/controller/extension"
 	"sigs.k8s.io/controller-runtime/pkg/controller"

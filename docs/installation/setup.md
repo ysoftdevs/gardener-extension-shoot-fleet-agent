@@ -12,7 +12,7 @@ To let the `shoot-fleet-agent` operate properly, you need to have:
 - have kubeconfig with read/write access to cluster.fleet.cattle.io and secret resrouces in some namespace
 
 ### ControllerRegistration
-An example of a `ControllerRegistration` for the `shoot-fleet-agent` can be found here: https://github.com/javamachr/gardener-extension-shoot-fleet-agent/blob/master/example/controller-registration.yaml
+An example of a `ControllerRegistration` for the `shoot-fleet-agent` can be found here: https://github.com/ysoftdevs/gardener-extension-shoot-fleet-agent/blob/master/example/controller-registration.yaml
 
 ### Configuration
 The `ControllerRegistration` contains a Helm chart which eventually deploy the `shoot-fleet-agent` to seed clusters. 

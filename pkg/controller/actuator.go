@@ -17,14 +17,14 @@ package controller
 import (
 	"context"
 	"fmt"
-	managed_resource_handler "github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/controller/managed-resource-handler"
-	token_requestor_handler "github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/controller/token-requestor-handler"
-	"github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/utils"
+	managed_resource_handler "github.com/ysoftdevs/gardener-extension-shoot-fleet-agent/pkg/controller/managed-resource-handler"
+	token_requestor_handler "github.com/ysoftdevs/gardener-extension-shoot-fleet-agent/pkg/controller/token-requestor-handler"
+	"github.com/ysoftdevs/gardener-extension-shoot-fleet-agent/pkg/utils"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"reflect"
 	"strings"
 
-	projConfig "github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/apis/config"
+	projConfig "github.com/ysoftdevs/gardener-extension-shoot-fleet-agent/pkg/apis/config"
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/gardener/gardener/pkg/extensions"
@@ -42,7 +42,7 @@ import (
 
 	"github.com/gardener/gardener/extensions/pkg/controller"
 	"github.com/gardener/gardener/extensions/pkg/controller/extension"
-	"github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/controller/config"
+	"github.com/ysoftdevs/gardener-extension-shoot-fleet-agent/pkg/controller/config"
 
 	extensionsv1alpha1 "github.com/gardener/gardener/pkg/apis/extensions/v1alpha1"
 	kutil "github.com/gardener/gardener/pkg/utils/kubernetes"

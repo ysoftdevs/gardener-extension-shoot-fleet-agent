@@ -1,4 +1,4 @@
-module github.com/javamachr/gardener-extension-shoot-fleet-agent
+module github.com/ysoftdevs/gardener-extension-shoot-fleet-agent
 
 go 1.17
 
@@ -9,6 +9,7 @@ require (
 	github.com/gobuffalo/packr/v2 v2.8.3
 	github.com/golang/mock v1.6.0
 	github.com/onsi/ginkgo v1.16.5
+	github.com/pkg/errors v0.9.1
 	github.com/rancher/fleet/pkg/apis v0.0.0-20220601092642-d45a36738d27
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5
@@ -81,7 +82,6 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/onsi/ginkgo/v2 v2.1.4 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.12.1 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.32.1 // indirect

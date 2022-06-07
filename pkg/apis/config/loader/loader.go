@@ -3,8 +3,8 @@ package loader
 import (
 	"io/ioutil"
 
-	"github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/apis/config"
-	"github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/apis/config/install"
+	"github.com/ysoftdevs/gardener-extension-shoot-fleet-agent/pkg/apis/config"
+	"github.com/ysoftdevs/gardener-extension-shoot-fleet-agent/pkg/apis/config/install"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"

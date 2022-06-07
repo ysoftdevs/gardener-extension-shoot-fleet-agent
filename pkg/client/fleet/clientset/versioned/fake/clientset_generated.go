@@ -19,9 +19,9 @@ limitations under the License.
 package fake
 
 import (
-	clientset "github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/client/fleet/clientset/versioned"
-	fleetv1alpha1 "github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/client/fleet/clientset/versioned/typed/fleet.cattle.io/v1alpha1"
-	fakefleetv1alpha1 "github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/client/fleet/clientset/versioned/typed/fleet.cattle.io/v1alpha1/fake"
+	clientset "github.com/ysoftdevs/gardener-extension-shoot-fleet-agent/pkg/client/fleet/clientset/versioned"
+	fleetv1alpha1 "github.com/ysoftdevs/gardener-extension-shoot-fleet-agent/pkg/client/fleet/clientset/versioned/typed/fleet.cattle.io/v1alpha1"
+	fakefleetv1alpha1 "github.com/ysoftdevs/gardener-extension-shoot-fleet-agent/pkg/client/fleet/clientset/versioned/typed/fleet.cattle.io/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"

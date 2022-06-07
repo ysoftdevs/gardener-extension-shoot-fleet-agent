@@ -11,7 +11,7 @@ import (
 	"github.com/gardener/gardener/pkg/utils/managedresources"
 	"github.com/gardener/gardener/pkg/utils/retry"
 	"github.com/go-logr/logr"
-	token_requestor_handler "github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/controller/token-requestor-handler"
+	token_requestor_handler "github.com/ysoftdevs/gardener-extension-shoot-fleet-agent/pkg/controller/token-requestor-handler"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
