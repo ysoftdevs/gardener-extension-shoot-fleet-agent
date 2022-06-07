@@ -1,12 +1,12 @@
 ############# builder
-FROM eu.gcr.io/gardener-project/3rd/golang:1.15.5 AS builder
+FROM golang:1.17.10 AS builder
 
-WORKDIR /go/src/github.com/gardener/gardener-extension-shoot-fleet-agent
+WORKDIR /go/src/github.com/ysoftdevs/gardener-extension-shoot-fleet-agent
 COPY . .
-RUN make install
+RUN make vendor install
 
 ############# gardener-extension-shoot-fleet-agent
-FROM eu.gcr.io/gardener-project/3rd/alpine:3.12.3 AS gardener-extension-shoot-fleet-agent
+FROM alpine:3.15.4 AS gardener-extension-shoot-fleet-agent
 
 COPY charts /charts
 COPY --from=builder /go/bin/gardener-extension-shoot-fleet-agent /gardener-extension-shoot-fleet-agent

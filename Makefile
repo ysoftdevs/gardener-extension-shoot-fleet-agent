@@ -19,7 +19,7 @@ IMAGE_PREFIX                := $(REGISTRY)/gardener-extension
 REPO_ROOT                   := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 HACK_DIR                    := $(REPO_ROOT)/hack
 VERSION                     := $(shell cat "$(REPO_ROOT)/VERSION")
-LD_FLAGS                    := "-w -X github.com/javamachr/$(EXTENSION_PREFIX)-$(NAME)/pkg/version.Version=$(IMAGE_TAG)"
+LD_FLAGS                    := "-w -X github.com/ysoftdevs/$(EXTENSION_PREFIX)-$(NAME)/pkg/version.Version=$(IMAGE_TAG)"
 LEADER_ELECTION             := false
 IGNORE_OPERATION_ANNOTATION := true
 
@@ -44,7 +44,7 @@ start:
 
 .PHONY: install
 install:
-	@LD_FLAGS="-w -X github.com/gardener/$(EXTENSION_PREFIX)-$(NAME)/pkg/version.Version=$(VERSION)" \
+	@LD_FLAGS="-w -X github.com/ysoftdevs/$(EXTENSION_PREFIX)-$(NAME)/pkg/version.Version=$(VERSION)" \
 	$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/install.sh ./...
 
 .PHONY: docker-login
@@ -59,6 +59,23 @@ docker-images:
 docker-push:
 	@docker push $(IMAGE_PREFIX)-$(NAME):$(VERSION)
 
+#######################################################
+# Rules related to Containerd image build and release #
+#######################################################
+
+.PHONY: containerd-login
+containerd-login:
+	@echo "$(DOCKER_PASS)" | nerdctl login -u "$(DOCKER_USER)" --password-stdin
+
+.PHONY: containerd-images
+containerd-images:
+	@nerdctl build -t $(IMAGE_PREFIX)-$(NAME):$(VERSION) -f Dockerfile --target $(EXTENSION_PREFIX)-$(NAME) .
+	@nerdctl build -t $(IMAGE_PREFIX)-$(NAME):latest -f Dockerfile --target $(EXTENSION_PREFIX)-$(NAME) .
+
+.PHONY: containerd-push
+containerd-push:
+	@nerdctl push $(IMAGE_PREFIX)-$(NAME):$(VERSION)
+
 #####################################################################
 # Rules for verification, formatting, linting, testing and cleaning #
 #####################################################################
@@ -70,6 +87,13 @@ install-requirements:
 	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/golang/mock/mockgen
 	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/onsi/ginkgo/ginkgo
 	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/install-requirements.sh
+
+.PHONY: vendor
+vendor:
+	@GO111MODULE=on go mod vendor
+	@chmod +x $(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/*
+	@chmod +x $(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/.ci/*
+	@$(REPO_ROOT)/hack/update-github-templates.sh
 
 .PHONY: revendor
 revendor:

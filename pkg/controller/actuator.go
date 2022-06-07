@@ -31,9 +31,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	gardencorev1beta1helper "github.com/gardener/gardener/pkg/apis/core/v1beta1/helper"
 
 	"github.com/gardener/gardener/extensions/pkg/controller"
 	"github.com/gardener/gardener/extensions/pkg/controller/extension"
@@ -250,9 +251,11 @@ func prepareLabels(cluster *extensions.Cluster, serviceConfig projConfig.Project
 }
 
 func (a *actuator) updateStatus(ctx context.Context, ex *extensionsv1alpha1.Extension) error {
-	return controller.TryUpdateStatus(ctx, retry.DefaultBackoff, a.client, ex, func() error {
-		return nil
-	})
+	statusUpdater := controller.NewStatusUpdater(a.logger)
+	statusUpdater.InjectClient(a.client)
+	operationType := gardencorev1beta1helper.ComputeOperationType(ex.ObjectMeta, ex.Status.LastOperation)
+	err := statusUpdater.Success(ctx, ex, operationType, "Successfully reconciled Extension")
+	return err
 }
 
 func (a *actuator) getFleetManager(cluster *extensions.Cluster) *FleetManager {
