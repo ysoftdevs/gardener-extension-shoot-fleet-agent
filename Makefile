@@ -14,7 +14,7 @@
 
 EXTENSION_PREFIX            := gardener-extension
 NAME                        := shoot-fleet-agent
-REGISTRY                    := javamachr
+REGISTRY                    := ysoftglobal.azurecr.io
 IMAGE_PREFIX                := $(REGISTRY)/gardener-extension
 REPO_ROOT                   := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 HACK_DIR                    := $(REPO_ROOT)/hack
@@ -100,7 +100,7 @@ revendor:
 	@GO111MODULE=on go mod vendor
 	@GO111MODULE=on go mod tidy
 	@chmod +x $(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/*
-	@chmod +x $(REPO_ROOT)/vendor/github. com/gardener/gardener/hack/.ci/*
+	@chmod +x $(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/.ci/*
 	@$(REPO_ROOT)/hack/update-github-templates.sh
 
 .PHONY: clean

@@ -18,6 +18,7 @@ require (
 	k8s.io/code-generator v0.24.0
 	k8s.io/component-base v0.24.0
 	sigs.k8s.io/controller-runtime v0.11.2
+	sigs.k8s.io/yaml v1.3.0
 )
 
 require (
@@ -130,7 +131,6 @@ require (
 	sigs.k8s.io/controller-tools v0.8.0 // indirect
 	sigs.k8s.io/json v0.0.0-20211208200746-9f7c6b3444d2 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
-	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
 replace (
