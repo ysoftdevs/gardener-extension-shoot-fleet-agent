@@ -121,6 +121,11 @@ check:
 generate:
 	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/generate.sh ./charts/... ./cmd/... ./pkg/... ./test/...
 	@rm -rf ./pkg/client/fleet/clientset/internalversion;
+
+.PHONY: generate-charts
+generate-charts:
+	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/generate.sh ./charts/...
+
 .PHONY: format
 format:
 	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/format.sh ./cmd ./pkg ./test

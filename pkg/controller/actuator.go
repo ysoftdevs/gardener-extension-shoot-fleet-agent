@@ -108,6 +108,11 @@ func (a *actuator) ensureDependencies(ctx context.Context, cluster *extensions.C
 	return utils.RunParallelFunctions(dependencyFunctions)
 }
 
+// isShootedSeed looks into the Cluster object to determine whether we are in a Shooted Seed cluster
+func isShootHibernated(cluster *extensions.Cluster) bool {
+	return cluster.Shoot.Status.IsHibernated
+}
+
 // Reconcile the Extension resource.
 func (a *actuator) Reconcile(ctx context.Context, ex *extensionsv1alpha1.Extension) error {
 	namespace := ex.GetNamespace()
@@ -119,6 +124,10 @@ func (a *actuator) Reconcile(ctx context.Context, ex *extensionsv1alpha1.Extensi
 	if isShootedSeedCluster(cluster) {
 		return a.updateStatus(ctx, ex)
 	}
+	if isShootHibernated(cluster) {
+		return a.updateStatus(ctx, ex)
+	}
+
 	shootsConfigOverride := &config.Config{}
 	if ex.Spec.ProviderConfig != nil { //parse providerConfig defaults override for this Shoot
 		if _, _, err := a.decoder.Decode(ex.Spec.ProviderConfig.Raw, nil, shootsConfigOverride); err != nil {
@@ -195,7 +204,7 @@ func (a *actuator) InjectScheme(scheme *runtime.Scheme) error {
 func (a *actuator) ReconcileClusterInFleetManager(ctx context.Context, namespace string, cluster *extensions.Cluster, override *config.Config) error {
 	a.logger.Info("Starting with already registered check")
 	labels := prepareLabels(cluster, getProjectConfig(cluster, &a.serviceConfig), getProjectConfig(cluster, override))
-	registered, err := a.getFleetManager(cluster).GetCluster(ctx, cluster.Shoot.Name)
+	registered, err := a.getFleetManager(cluster).GetCluster(ctx, buildCrdName(cluster))
 
 	// We cannot find the cluster because of an unknown error
 	if err != nil && !errors.IsNotFound(err) {
