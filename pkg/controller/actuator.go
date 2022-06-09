@@ -15,6 +15,7 @@
 package controller
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	managed_resource_handler "github.com/ysoftdevs/gardener-extension-shoot-fleet-agent/pkg/controller/managed-resource-handler"
@@ -52,13 +53,16 @@ import (
 const ActuatorName = "shoot-fleet-agent-actuator"
 
 // KubeconfigSecretName name of secret that holds kubeconfig for Shoot
-const KubeconfigSecretName = "kubecfg"
+const KubeconfigSecretName = token_requestor_handler.TokenRequestorSecretName
 
 // KubeconfigKey key in KubeconfigSecretName secret that holds kubeconfig for Shoot
-const KubeconfigKey = "kubeconfig"
+const KubeconfigKey = token_requestor_handler.TokenRequestorSecretKey
 
 // DefaultConfigKey is the name of default config key.
 const DefaultConfigKey = "default"
+
+// FleetClusterSecretDataKey is the key of the data item that holds the kubeconfig for the cluster in fleet
+const FleetClusterSecretDataKey = "value"
 
 // NewActuator returns an actuator responsible for Extension resources.
 func NewActuator(config config.Config) extension.Actuator {
@@ -202,9 +206,22 @@ func (a *actuator) InjectScheme(scheme *runtime.Scheme) error {
 
 // ReconcileClusterInFleetManager reconciles cluster registration in remote fleet manager
 func (a *actuator) ReconcileClusterInFleetManager(ctx context.Context, namespace string, cluster *extensions.Cluster, override *config.Config) error {
-	a.logger.Info("Starting with already registered check")
 	labels := prepareLabels(cluster, getProjectConfig(cluster, &a.serviceConfig), getProjectConfig(cluster, override))
-	registered, err := a.getFleetManager(cluster).GetCluster(ctx, buildCrdName(cluster))
+
+	a.logger.Info("Looking up Secret with KubeConfig for given Shoot.", "namespace", namespace, "secretName", KubeconfigSecretName)
+	kubeconfigSecret := &corev1.Secret{}
+	if err := a.client.Get(ctx, kutil.Key(namespace, KubeconfigSecretName), kubeconfigSecret); err != nil {
+		a.logger.Error(err, "Failed to find Secret with kubeconfig for Fleet registration.")
+		return err
+	}
+
+	a.logger.Info("Checking if the fleet cluster already exists")
+	// Check whether we already have an existing cluster
+	_, err := a.getFleetManager(cluster).GetCluster(ctx, buildCrdName(cluster))
+	if err != nil {
+		a.logger.Error(err, "Could not fetch fleet cluster")
+		return err
+	}
 
 	// We cannot find the cluster because of an unknown error
 	if err != nil && !errors.IsNotFound(err) {
@@ -213,46 +230,67 @@ func (a *actuator) ReconcileClusterInFleetManager(ctx context.Context, namespace
 	}
 
 	// We cannot find the cluster because we haven't registered it yet
-	if err != nil && errors.IsNotFound(err) {
+	if errors.IsNotFound(err) {
 		a.logger.Info("Creating fleet cluster", "shoot", cluster.Shoot.Name)
-		return a.registerNewClusterInFleet(ctx, namespace, cluster, labels)
+		return a.registerNewClusterInFleet(ctx, namespace, cluster, labels, kubeconfigSecret.Data[KubeconfigKey])
 	}
 
-	// The cluster we have in fleet is already in the correct state
-	if reflect.DeepEqual(registered.Labels, labels) {
-		a.logger.Info("Cluster already registered - skipping registration", "clientId", registered.Spec.ClientID)
-		return nil
-	}
-
-	a.logger.Info("Updating labels of already registered cluster.", "clientId", registered.Spec.ClientID)
-	return a.updateClusterLabelsInFleet(ctx, registered, cluster, labels)
+	a.logger.Info("Updating existing fleet cluster")
+	return a.updateClusterInFleet(ctx, cluster, labels, kubeconfigSecret.Data[KubeconfigKey])
 }
 
-func (a *actuator) updateClusterLabelsInFleet(ctx context.Context, clusterRegistration *fleetv1alpha1.Cluster, cluster *extensions.Cluster, labels map[string]string) error {
-	clusterRegistration.Labels = labels
-	_, err := a.getFleetManager(cluster).UpdateCluster(ctx, clusterRegistration)
+func (a *actuator) updateClusterInFleet(ctx context.Context, cluster *extensions.Cluster, labels map[string]string, kubeconfig []byte) error {
+	updated := false
+	clusterRegistration, err := a.getFleetManager(cluster).GetCluster(ctx, buildCrdName(cluster))
 	if err != nil {
-		a.logger.Error(err, "Failed to update cluster labels in Fleet registration.", "clusterName", clusterRegistration.Name)
-	}
-	return err
-}
-
-func (a *actuator) registerNewClusterInFleet(ctx context.Context, namespace string, cluster *extensions.Cluster, labels map[string]string) error {
-	a.logger.Info("Looking up Secret with KubeConfig for given Shoot.", "namespace", namespace, "secretName", KubeconfigSecretName)
-	secret := &corev1.Secret{}
-	if err := a.client.Get(ctx, kutil.Key(namespace, KubeconfigSecretName), secret); err != nil {
-		a.logger.Error(err, "Failed to find Secret with kubeconfig for Fleet registration.")
+		a.logger.Error(err, "Could not fetch fleet cluster")
 		return err
 	}
 
+	fleetKubeconfigSecret, err := a.getFleetManager(cluster).GetKubeconfigSecret(ctx, buildKubecfgName(cluster))
+	if err != nil {
+		a.logger.Error(err, "Could not fetch fleet kubeconfig secret")
+		return err
+	}
+
+	if !reflect.DeepEqual(clusterRegistration.Labels, labels) {
+		a.logger.Info("Cluster labels changed, updating")
+		clusterRegistration.Labels = labels
+		_, err := a.getFleetManager(cluster).UpdateCluster(ctx, clusterRegistration)
+		if err != nil {
+			a.logger.Error(err, "Failed to update cluster labels in Fleet registration.", "clusterName", clusterRegistration.Name)
+			return err
+		}
+		updated = true
+	}
+
+	if bytes.Compare(fleetKubeconfigSecret.Data[FleetClusterSecretDataKey], kubeconfig) != 0 {
+		a.logger.Info("Shoot kubeconfig changed, updating")
+		fleetKubeconfigSecret.Data[FleetClusterSecretDataKey] = kubeconfig
+		_, err := a.getFleetManager(cluster).UpdateKubeconfigSecret(ctx, fleetKubeconfigSecret)
+		if err != nil {
+			a.logger.Error(err, "Failed to update kuebconfig secret in Fleet registration.", "clusterName", clusterRegistration.Name)
+			return err
+		}
+		updated = true
+	}
+
+	if updated {
+		a.logger.Info("Cluster successfully updated.")
+	} else {
+		a.logger.Info("Cluster is already up to date.")
+	}
+	return nil
+}
+
+func (a *actuator) registerNewClusterInFleet(ctx context.Context, namespace string, cluster *extensions.Cluster, labels map[string]string, kubeconfig []byte) error {
 	secretData := make(map[string][]byte)
-	secretData["value"] = secret.Data[KubeconfigKey]
-	a.logger.Info("Loaded kubeconfig from secret", "kubeconfig", secret, "namespace", namespace)
+	secretData[FleetClusterSecretDataKey] = kubeconfig
 
 	const fleetRegisterNamespace = "clusters"
 	kubeconfigSecret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kubecfg-" + buildCrdName(cluster),
+			Name:      buildKubecfgName(cluster),
 			Namespace: fleetRegisterNamespace,
 		},
 		Data: secretData,
@@ -331,8 +369,13 @@ func getProjectConfig(cluster *extensions.Cluster, serviceConfig *config.Config)
 }
 
 // buildCrdName creates a unique name for cluster registration resources in Fleet manager cluster
+func buildKubecfgName(cluster *extensions.Cluster) string {
+	return fmt.Sprintf("kubecfg-%s", buildCrdName(cluster))
+}
+
+// buildCrdName creates a unique name for cluster registration resources in Fleet manager cluster
 func buildCrdName(cluster *extensions.Cluster) string {
-	return cluster.Seed.Name + "" + cluster.Shoot.Name
+	return fmt.Sprintf("%s%s", cluster.Seed.Name, cluster.Shoot.Name)
 }
 
 // isShootedSeedCluster checks if clusters purpose is Infrastructure

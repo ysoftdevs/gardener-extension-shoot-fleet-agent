@@ -63,6 +63,16 @@ func (f *FleetManager) GetCluster(ctx context.Context, clusterName string) (*v1a
 	return f.fleetClient.FleetV1alpha1().Clusters(f.namespace).Get(ctx, clusterName, metav1.GetOptions{})
 }
 
+// GetKubeconfigSecret registers a clusters kubeconfig secret in remote fleet
+func (f *FleetManager) GetKubeconfigSecret(ctx context.Context, secretName string) (*corev1.Secret, error) {
+	return f.secretClient.CoreV1().Secrets(f.namespace).Get(ctx, secretName, metav1.GetOptions{})
+}
+
+// UpdateKubeconfigSecret updates kubeconfig secret in remote fleet
+func (f *FleetManager) UpdateKubeconfigSecret(ctx context.Context, secret *corev1.Secret) (*corev1.Secret, error) {
+	return f.secretClient.CoreV1().Secrets(f.namespace).Update(ctx, secret, metav1.UpdateOptions{})
+}
+
 // CreateKubeconfigSecret registers a clusters kubeconfig secret in remote fleet
 func (f *FleetManager) CreateKubeconfigSecret(ctx context.Context, secret *corev1.Secret) (*corev1.Secret, error) {
 	return f.secretClient.CoreV1().Secrets(f.namespace).Create(ctx, secret, metav1.CreateOptions{})
