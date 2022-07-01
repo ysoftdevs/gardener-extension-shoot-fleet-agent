@@ -95,6 +95,19 @@ func (t *TokenRequestorHandler) isTokenInserted() bool {
 
 func (t *TokenRequestorHandler) createKubeconfigSecretFromGeneric() error {
 	kubeconfig, err := t.getGenericKubeconfig()
+	s := false
+	for _, value := range t.cluster.Shoot.Status.AdvertisedAddresses {
+		// check for external URL server
+		if value.Name == "external" {
+			kubeconfig.Clusters[0].Cluster.Server = value.URL
+			s = true
+			break
+		}
+	}
+	if s != true {
+		t.logger.Info(fmt.Sprintf("Shoot status doesn't contain external URL address."))
+		return err
+	}
 	if err != nil {
 		return err
 	}
