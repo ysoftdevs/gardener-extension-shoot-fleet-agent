@@ -214,14 +214,14 @@ func (a *actuator) ReconcileClusterInFleetManager(ctx context.Context, namespace
 		a.logger.Error(err, "Failed to find Secret with kubeconfig for Fleet registration.")
 		return err
 	}
-	// skip this check for now
-	// a.logger.Info("Checking if the fleet cluster already exists")
+
+	a.logger.Info("Checking if the fleet cluster already exists")
 	// Check whether we already have an existing cluster
-	//_, err := a.getFleetManager(cluster).GetCluster(ctx, buildCrdName(cluster))
-	//if err != nil {
-	//	a.logger.Error(err, "Could not fetch fleet cluster")
-	//	return err
-	//}
+	_, err := a.getFleetManager(cluster).GetCluster(ctx, buildCrdName(cluster))
+	if err != nil {
+		a.logger.Error(err, "Could not fetch fleet cluster")
+		//return err
+	}
 
 	// We cannot find the cluster because of an unknown error
 	if err != nil && !errors.IsNotFound(err) {
