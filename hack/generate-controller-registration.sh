@@ -87,9 +87,6 @@ providerConfig:
   values:
     image:
       tag: $VERSION
-    fleetManager:
-      kubeconfig: #base64 encoded kubeconfig of Fleet manager cluster with user that has write access to Cluster and Secret
-      namespace: clusters
 ---
 apiVersion: core.gardener.cloud/v1beta1
 kind: ControllerRegistration
@@ -109,7 +106,6 @@ for kind_and_type in "${KINDS_AND_TYPES[@]}"; do
   - kind: $KIND
     type: $TYPE
     globallyEnabled: $GLOBALLY_ENABLED
-    primary: true
 EOM
 done
 
