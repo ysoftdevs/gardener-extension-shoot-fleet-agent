@@ -87,6 +87,9 @@ providerConfig:
   values:
     image:
       tag: $VERSION
+    fleetManager:
+      kubeconfig: #base64 encoded kubeconfig of Fleet manager cluster with user that has write access to Cluster and Secret
+      namespace: clusters
 ---
 apiVersion: core.gardener.cloud/v1beta1
 kind: ControllerRegistration
