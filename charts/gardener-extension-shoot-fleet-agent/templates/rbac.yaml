@@ -12,10 +12,17 @@ rules:
   - extensions.gardener.cloud
   resources:
   - clusters
+  - dnsrecords
   verbs:
   - get
   - list
   - watch
+- apiGroups:
+  - resources.gardener.cloud
+  resources:
+  - managedresources
+  verbs:
+  - "*"
 - apiGroups:
   - extensions.gardener.cloud
   resources:

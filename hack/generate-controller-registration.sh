@@ -37,7 +37,9 @@ EOM
 
 if [ "$1" == "--optional" ]; then
   shift
-  MODE=$'\n    globallyEnabled: false'
+  GLOBALLY_ENABLED='false'
+else
+  GLOBALLY_ENABLED='true'
 fi
 NAME="$1"
 CHART_DIR="$2"
@@ -67,7 +69,7 @@ trap cleanup EXIT ERR INT TERM
 
 export HELM_HOME="$temp_helm_home"
 [ "$(helm version --client --template "{{.Version}}" | head -c2 | tail -c1)" = "3" ] || helm init --client-only > /dev/null 2>&1
-helm package "$CHART_DIR" --version "$VERSION" --app-version "$VERSION" --destination "$temp_dir" > /dev/null
+helm package "$CHART_DIR" --app-version "$VERSION" --destination "$temp_dir" > /dev/null
 tar -xzm -C "$temp_extract_dir" -f "$temp_dir"/*
 chart="$(tar --sort=name -c --owner=root:0 --group=root:0 --mtime='UTC 2019-01-01' -C "$temp_extract_dir" "$(basename "$temp_extract_dir"/*)" | gzip -n | base64 | tr -d '\n')"
 
@@ -76,10 +78,27 @@ mkdir -p "$(dirname "$DEST")"
 cat <<EOM > "$DEST"
 ---
 apiVersion: core.gardener.cloud/v1beta1
+kind: ControllerDeployment
+metadata:
+  name: $NAME
+type: helm
+providerConfig:
+  chart: $chart
+  values:
+    image:
+      tag: $VERSION
+    fleetManager:
+      kubeconfig: #base64 encoded kubeconfig of Fleet manager cluster with user that has write access to Cluster and Secret
+      namespace: clusters
+---
+apiVersion: core.gardener.cloud/v1beta1
 kind: ControllerRegistration
 metadata:
   name: $NAME
 spec:
+  deployment:
+    deploymentRefs:
+    - name: $NAME
   resources:
 EOM
 
@@ -88,22 +107,11 @@ for kind_and_type in "${KINDS_AND_TYPES[@]}"; do
   TYPE="$(echo "$kind_and_type" | cut -d ':' -f 2)"
   cat <<EOM >> "$DEST"
   - kind: $KIND
-    type: $TYPE$MODE
-    globallyEnabled: true
+    type: $TYPE
+    globallyEnabled: $GLOBALLY_ENABLED
+    primary: true
 EOM
 done
 
-cat <<EOM >> "$DEST"
-  deployment:
-    type: helm
-    providerConfig:
-      chart: $chart
-      values:
-        image:
-          tag: $VERSION
-        fleetManager:
-          kubeconfig: #base64 encoded kubeconfig of Fleet manager cluster with user that has write access to Cluster and Secret
-          namespace: clusters
-EOM
 
 echo "Successfully generated controller registration at $DEST"

@@ -1,0 +1,4 @@
+apiVersion: v1
+description: A Helm chart for shoot-fleet-agent-shoot
+name: shoot-fleet-agent-shoot
+version: 0.1.0

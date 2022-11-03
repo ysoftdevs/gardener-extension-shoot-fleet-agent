@@ -3,7 +3,7 @@
 
 
 [![CircleCI](https://circleci.com/gh/javamachr/gardener-extension-shoot-fleet-agent.svg?style=shield)](https://circleci.com/gh/javamachr/gardener-extension-shoot-fleet-agent)
-[![Go Report Card](https://goreportcard.com/badge/github.com/javamachr/gardener-extension-shoot-fleet-agent)](https://goreportcard.com/report/github.com/javamachr/gardener-extension-shoot-fleet-agent)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ysoftdevs/gardener-extension-shoot-fleet-agent)](https://goreportcard.com/report/github.com/ysoftdevs/gardener-extension-shoot-fleet-agent)
 
 Project Gardener implements the automated management and operation of [Kubernetes](https://kubernetes.io/) clusters as a service. Its main principle is to leverage Kubernetes concepts for all of its tasks.
 
@@ -76,7 +76,7 @@ Static code checks and tests can be executed by running `VERIFY=true make all`. 
 
 ## Feedback and Support
 
-Feedback and contributions are always welcome. Please report bugs or suggestions as [GitHub issues](https://github.com/javamachr/gardener-extension-shoot-fleet-agent/issues) or join our [Slack channel #gardener](https://kubernetes.slack.com/messages/gardener) (please invite yourself to the Kubernetes workspace [here](http://slack.k8s.io)).
+Feedback and contributions are always welcome. Please report bugs or suggestions as [GitHub issues](https://github.com/ysoftdevs/gardener-extension-shoot-fleet-agent/issues) or join our [Slack channel #gardener](https://kubernetes.slack.com/messages/gardener) (please invite yourself to the Kubernetes workspace [here](http://slack.k8s.io)).
 
 ## Learn more!
 

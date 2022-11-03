@@ -19,7 +19,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	fleetcontroller "github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/controller"
+	fleetcontroller "github.com/ysoftdevs/gardener-extension-shoot-fleet-agent/pkg/controller"
 
 	"github.com/gardener/gardener/extensions/pkg/controller/healthcheck"
 	healthcheckconfig "github.com/gardener/gardener/extensions/pkg/controller/healthcheck/config"

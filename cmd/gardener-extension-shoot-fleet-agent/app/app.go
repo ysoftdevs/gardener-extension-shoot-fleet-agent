@@ -18,8 +18,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/controller"
-	"github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/controller/healthcheck"
+	"github.com/ysoftdevs/gardener-extension-shoot-fleet-agent/pkg/controller"
+	"github.com/ysoftdevs/gardener-extension-shoot-fleet-agent/pkg/controller/healthcheck"
 
 	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"
 	"github.com/gardener/gardener/extensions/pkg/util"

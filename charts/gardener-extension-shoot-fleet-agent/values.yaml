@@ -1,5 +1,5 @@
 image:
-  repository: javamachr/gardener-extension-shoot-fleet-agent
+  repository: ysoftglobal.azurecr.io/gardener-extension-shoot-fleet-agent
   tag: latest
   pullPolicy: Always
 

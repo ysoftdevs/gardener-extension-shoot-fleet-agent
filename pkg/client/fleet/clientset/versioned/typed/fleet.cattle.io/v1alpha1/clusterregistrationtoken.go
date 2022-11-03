@@ -22,8 +22,8 @@ import (
 	"context"
 	"time"
 
-	scheme "github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/client/fleet/clientset/versioned/scheme"
 	v1alpha1 "github.com/rancher/fleet/pkg/apis/fleet.cattle.io/v1alpha1"
+	scheme "github.com/ysoftdevs/gardener-extension-shoot-fleet-agent/pkg/client/fleet/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"

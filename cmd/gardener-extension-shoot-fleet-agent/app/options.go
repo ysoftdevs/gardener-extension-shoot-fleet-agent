@@ -17,7 +17,7 @@ package app
 import (
 	"os"
 
-	fleetagentservicecmd "github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/cmd"
+	fleetagentservicecmd "github.com/ysoftdevs/gardener-extension-shoot-fleet-agent/pkg/cmd"
 
 	controllercmd "github.com/gardener/gardener/extensions/pkg/controller/cmd"
 )

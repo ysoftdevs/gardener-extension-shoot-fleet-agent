@@ -14,7 +14,7 @@
 
 EXTENSION_PREFIX            := gardener-extension
 NAME                        := shoot-fleet-agent
-REGISTRY                    := javamachr
+REGISTRY                    := ysoftglobal.azurecr.io
 IMAGE_PREFIX                := $(REGISTRY)/gardener-extension
 REPO_ROOT                   := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 HACK_DIR                    := $(REPO_ROOT)/hack
@@ -49,7 +49,7 @@ install:
 
 .PHONY: docker-login
 docker-login:
-	echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin
+	@echo "$$DOCKER_PASSWORD" | docker login -u "${DOCKER_USER}" --password-stdin "${REGISTRY}"
 
 .PHONY: docker-images
 docker-images:
@@ -65,7 +65,7 @@ docker-push:
 
 .PHONY: containerd-login
 containerd-login:
-	@echo "$(DOCKER_PASS)" | nerdctl login -u "$(DOCKER_USER)" --password-stdin
+	@echo "$$DOCKER_PASSWORD" | nerdctl login -u "${DOCKER_USER}" --password-stdin "${REGISTRY}"
 
 .PHONY: containerd-images
 containerd-images:
@@ -100,7 +100,7 @@ revendor:
 	@GO111MODULE=on go mod vendor
 	@GO111MODULE=on go mod tidy
 	@chmod +x $(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/*
-	@chmod +x $(REPO_ROOT)/vendor/github. com/gardener/gardener/hack/.ci/*
+	@chmod +x $(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/.ci/*
 	@$(REPO_ROOT)/hack/update-github-templates.sh
 
 .PHONY: clean
@@ -121,6 +121,11 @@ check:
 generate:
 	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/generate.sh ./charts/... ./cmd/... ./pkg/... ./test/...
 	@rm -rf ./pkg/client/fleet/clientset/internalversion;
+
+.PHONY: generate-charts
+generate-charts:
+	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/generate.sh ./charts/...
+
 .PHONY: format
 format:
 	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/format.sh ./cmd ./pkg ./test

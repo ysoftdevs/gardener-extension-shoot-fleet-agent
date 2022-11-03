@@ -21,7 +21,7 @@ package versioned
 import (
 	"fmt"
 
-	fleetv1alpha1 "github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/client/fleet/clientset/versioned/typed/fleet.cattle.io/v1alpha1"
+	fleetv1alpha1 "github.com/ysoftdevs/gardener-extension-shoot-fleet-agent/pkg/client/fleet/clientset/versioned/typed/fleet.cattle.io/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

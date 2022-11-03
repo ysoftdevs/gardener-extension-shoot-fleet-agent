@@ -19,8 +19,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/javamachr/gardener-extension-shoot-fleet-agent/pkg/client/fleet/clientset/versioned/scheme"
 	v1alpha1 "github.com/rancher/fleet/pkg/apis/fleet.cattle.io/v1alpha1"
+	"github.com/ysoftdevs/gardener-extension-shoot-fleet-agent/pkg/client/fleet/clientset/versioned/scheme"
 	rest "k8s.io/client-go/rest"
 )
 
