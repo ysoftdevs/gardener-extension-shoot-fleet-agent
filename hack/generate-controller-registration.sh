@@ -109,7 +109,6 @@ for kind_and_type in "${KINDS_AND_TYPES[@]}"; do
   - kind: $KIND
     type: $TYPE
     globallyEnabled: $GLOBALLY_ENABLED
-    primary: true
 EOM
 done
 
